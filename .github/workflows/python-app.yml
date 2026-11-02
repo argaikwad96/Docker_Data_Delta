@@ -1,56 +1,62 @@
+
 name: Student ML CI-CD Pipeline
 
 on:
-    push:
-        branches:
-            - main 
-    pull_request:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    test-and-build:
-        name: Test and Bulid ML Application
-        
-        runs-on: ubuntu-latest
 
-        steps:
-            - name: Chechout Code 
-              uses: actions/checkout@v4
+  test-and-build:
 
-            - name: Setup Python
-              uses: actionn/setup-python@v5
+    name: Test and Build ML Application
 
-              with:
-                python-version: "3.10"
+    runs-on: ubuntu-latest
 
-            - name: Install Dependencies
-              run: pip install -r requirements.txt
+    steps:
 
-            - name: Train ML Model
-              run: python ml/train.py   
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-            - name: Run Tests
-              run: python -m pytest -v
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-            - name: Build Docker Image 
-              run: docker build -t student-performance-api .
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-    deploy: 
-        name: Deploy Application
+      - name: Train ML Model
+        run: python ml/train.py
 
-        needs: test-and-build
+      - name: Run Tests
+        run: python -m pytest -v
 
-        if: github.event_name == 'push' && github.ref == 'rfs/heads/main'
+      - name: Build Docker Image
+        run: docker build -t student-performance-api .
 
-        runs-on: ubuntu-latest
+  deploy:
 
-        steps: 
-        - name: Trigger Render Deployment
-          env:
-            RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-          run: |
-            test -n "$RENDER_DEPLOY_HOOK"
-            curl --fail --silent --show-error \
-            --retry 5 --retry-deplay 2 \
-            -x POST "$RENDER_DEPLOY_HOOK"
+    name: Deploy Application
+
+    needs: test-and-build
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Trigger Render Deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          test -n "$RENDER_DEPLOY_HOOK"
+          curl --fail --silent --show-error \
+            --retry 5 --retry-delay 2 \
+            -X POST "$RENDER_DEPLOY_HOOK"
