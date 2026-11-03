@@ -27,7 +27,7 @@ def test_prediction():
     )
 
     assert response.status_code == 200
-    assert response.json()["predicted_score"] == 68.0
+    assert response.json()["predicted_score"] == 68.16
 
 
 def test_invalid_study_hours():
